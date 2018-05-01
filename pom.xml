@@ -129,7 +129,7 @@
                     <includeProjectDependencies>true</includeProjectDependencies>
                     <includePluginDependencies>false</includePluginDependencies>
                     <classpathScope>compile</classpathScope>
-                    <mainClass>com.bayuedekui.sparkproject.App</mainClass>
+                    <mainClass>bayuedekui.sparkproject.App</mainClass>
                 </configuration>
             </plugin>
 

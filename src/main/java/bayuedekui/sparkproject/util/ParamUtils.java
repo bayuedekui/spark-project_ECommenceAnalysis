@@ -1,5 +1,6 @@
 package bayuedekui.sparkproject.util;
 
+import bayuedekui.sparkproject.constant.Constants;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import bayuedekui.sparkproject.conf.ConfigurationManager;
@@ -18,12 +19,12 @@ public class ParamUtils {
 	 * @return 任务id
 	 */
 	public static Long getTaskIdFromArgs(String[] args, String taskType) {
-		boolean local = ConfigurationManager.getBoolean(Constants.SPARK_LOCAL);
+		boolean local = ConfigurationManager.getBoolean(Constants.SAPRK_LOCAL);
 		
 		if(local) {
-			return ConfigurationManager.getLong(taskType);  
-		} else {
-			try {
+				return ConfigurationManager.getLong(taskType);
+			} else {
+				try {
 				if(args != null && args.length > 0) {
 					return Long.valueOf(args[0]);
 				}

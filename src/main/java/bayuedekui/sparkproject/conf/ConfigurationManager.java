@@ -60,7 +60,11 @@ public class ConfigurationManager {
     }
 
     /**
-     * 获取整数类型的配置项
+     * 获取整数类型的配置项,获取一个构造器对象,利用构造器的getReasourceAsStream()
+     * 方法读取my.properties配置文件,通过Properties对象的getPoperty(key),获取my.peorperties文件
+     * 的value值
+     * 
+     * 
      */
     public static Integer getIntger(String key){
         String value=getProperty(key);
@@ -70,5 +74,32 @@ public class ConfigurationManager {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    /**
+     * 获取布尔类型的配置项
+     * @param key
+     * @return value
+     */
+    public static Boolean getBoolean(String key){
+        String value=getProperty(key);
+        try {
+            return Boolean.valueOf(value);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+
+        }
+        return false;
+    }
+    
+    public static Long getLong(String key){
+        String value=getProperty(key);
+        try {
+            return Long.valueOf(value);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } 
+        return 0L;
     }
 }

@@ -1,5 +1,8 @@
 package bayuedekui.sparkproject.util;
 
+import bayuedekui.sparkproject.conf.ConfigurationManager;
+import bayuedekui.sparkproject.constant.Constants;
+import bayuedekui.test.MockData;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
@@ -26,7 +29,7 @@ public class SparkUtils {
 	 * 决定，如何设置SparkConf的master
 	 */
 	public static void setMaster(SparkConf conf) {
-		boolean local = ConfigurationManager.getBoolean(Constants.SPARK_LOCAL);
+		boolean local = ConfigurationManager.getBoolean(Constants.SAPRK_LOCAL);
 		if(local) {
 			conf.setMaster("local");  
 		}  
@@ -39,7 +42,7 @@ public class SparkUtils {
 	 * @return
 	 */
 	public static SQLContext getSQLContext(SparkContext sc) {
-		boolean local = ConfigurationManager.getBoolean(Constants.SPARK_LOCAL);
+		boolean local = ConfigurationManager.getBoolean(Constants.SAPRK_LOCAL);
 		if(local) {
 			return new SQLContext(sc);
 		} else {
@@ -54,7 +57,7 @@ public class SparkUtils {
 	 * @param sqlContext
 	 */
 	public static void mockData(JavaSparkContext sc, SQLContext sqlContext) {
-		boolean local = ConfigurationManager.getBoolean(Constants.SPARK_LOCAL);
+		boolean local = ConfigurationManager.getBoolean(Constants.SAPRK_LOCAL);
 		if(local) {
 			MockData.mock(sc, sqlContext);  
 		}

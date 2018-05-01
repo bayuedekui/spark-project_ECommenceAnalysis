@@ -42,7 +42,7 @@ public class JDBCHelper {
     }
 
     
-    LinkedList<Connection> datasource=null;    
+    private LinkedList<Connection> datasource=new LinkedList<Connection>();    
     /**
      * 第三部(创造连接池):私有化构造方法,整个周期过程中只创建一次,
      * 所以可以去创建自己唯一的饿一个数据库连接池
@@ -57,7 +57,7 @@ public class JDBCHelper {
             String password=ConfigurationManager.getProperty(Constants.JDBC_PASSWORD);
             try {
                 Connection conn= DriverManager.getConnection(
-                        url+"characterEncoding=utf8",user,password);
+                        url,user,password);
                 datasource.push(conn);//将获取到的连接放到队列中去
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -137,7 +137,7 @@ public class JDBCHelper {
         }
     }
     //内部类:查询回调接口
-    static interface queryCallback{
+    public static interface queryCallback{
         void process(ResultSet rs) throws Exception;
     }
 
