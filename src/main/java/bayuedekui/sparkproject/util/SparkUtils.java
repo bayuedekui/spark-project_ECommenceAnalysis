@@ -13,9 +13,9 @@ import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.hive.HiveContext;
 
 import com.alibaba.fastjson.JSONObject;
-import com.ibeifeng.sparkproject.conf.ConfigurationManager;
-import com.ibeifeng.sparkproject.constant.Constants;
-import com.ibeifeng.sparkproject.test.MockData;
+import bayuedekui.sparkproject.conf.ConfigurationManager;
+import bayuedekui.sparkproject.constant.Constants;
+import bayuedekui.test.MockData;
 
 /**
  * Spark工具类

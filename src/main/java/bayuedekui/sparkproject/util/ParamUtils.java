@@ -22,7 +22,11 @@ public class ParamUtils {
 		boolean local = ConfigurationManager.getBoolean(Constants.SAPRK_LOCAL);
 		
 		if(local) {
+			if(taskType!=null&&!taskType.equals("")) {//我加
 				return ConfigurationManager.getLong(taskType);
+			}else{//
+				return Long.valueOf(args[0]);//
+			}//
 			} else {
 				try {
 				if(args != null && args.length > 0) {
