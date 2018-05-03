@@ -59,7 +59,7 @@ public class UserVisitSessionAnalyzeSpark {
         //通过以下方法,获得数据格式为<sessionid,fullAggrInfo(sessionid,searchKeyWords,clickCategoryIds,age,city,professional,sex)>
         JavaPairRDD<String, String> sessionid2AggrInfoRDD = aggregateBySession(actionRDD, sqlContext);
 
-        System.out.println(sessionid2AggrInfoRDD.count());
+        System.out.println("11111---"+sessionid2AggrInfoRDD.count());
         for(Tuple2<String,String> tuple:sessionid2AggrInfoRDD.take(10)){
             System.out.println(tuple._2);
         }
@@ -67,7 +67,7 @@ public class UserVisitSessionAnalyzeSpark {
         //相当于我们编写的算子函数,是要访问外面的任务参数对象的
         //规则:匿名内部类(算子函数),访问外部对象,是要给外部对象使用final修饰的
         JavaPairRDD<String,String> filteredSessionid2AggrInfoRDD=filterSession(sessionid2AggrInfoRDD,taskParam);
-        System.out.println(filteredSessionid2AggrInfoRDD.count());
+        System.out.println("2222---"+filteredSessionid2AggrInfoRDD.count());
         for(Tuple2<String,String> tuple:filteredSessionid2AggrInfoRDD.take(10)){
             System.out.println(tuple._2);
         }
@@ -246,7 +246,7 @@ public class UserVisitSessionAnalyzeSpark {
                         return new Tuple2<String, String>(sessionid, fullAggrInfo);
                     }
                 });
-        return null;
+        return session2idFullInfoRDD;
     }//aggregateSession结束
 
     /**
