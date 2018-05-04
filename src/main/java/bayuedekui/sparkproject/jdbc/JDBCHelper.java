@@ -70,7 +70,7 @@ public class JDBCHelper {
      * 有可能去获取的时候,里面的连接用完了,需要自己代码实现一个等待机制
      */
     public synchronized Connection getConection(){
-        while(datasource.size()==0){
+        while(datasource.size()==0){//数据池里面的连接被用完了，等待其他的链接用完归还
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {

@@ -5,6 +5,7 @@ import bayuedekui.sparkproject.constant.Constants;
 import bayuedekui.sparkproject.dao.ITaskDao;
 import bayuedekui.sparkproject.dao.impl.DAOFactory;
 import bayuedekui.sparkproject.domain.Task;
+import bayuedekui.sparkproject.util.DateUtils;
 import bayuedekui.sparkproject.util.ParamUtils;
 import bayuedekui.sparkproject.util.StringUtils;
 import bayuedekui.sparkproject.util.ValidUtils;
@@ -29,6 +30,7 @@ import scala.Tuple2;
 import scala.tools.nsc.doc.DocFactory;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.Iterator;
 
 public class UserVisitSessionAnalyzeSpark {
@@ -66,6 +68,9 @@ public class UserVisitSessionAnalyzeSpark {
         //接着对聚合好的sessionid2AggrInfoRDD数据进行过滤
         //相当于我们编写的算子函数,是要访问外面的任务参数对象的
         //规则:匿名内部类(算子函数),访问外部对象,是要给外部对象使用final修饰的
+
+        //重构,通化市进行过滤和统计
+
         JavaPairRDD<String,String> filteredSessionid2AggrInfoRDD=filterSession(sessionid2AggrInfoRDD,taskParam);
         System.out.println("2222---"+filteredSessionid2AggrInfoRDD.count());
         for(Tuple2<String,String> tuple:filteredSessionid2AggrInfoRDD.take(10)){
@@ -156,6 +161,14 @@ public class UserVisitSessionAnalyzeSpark {
                         StringBuffer clickCategoryIdsBuffer = new StringBuffer("");
 
                         Long userid = null;
+
+                        //session的起始结束时间
+                        Date startTime=null;
+                        Date endTime=null;
+                        //session的访问步长
+                        int stepLength=0;
+
+
                         while (iterator.hasNext()) {
                             Row row = iterator.next();
                             if (userid == null) {
@@ -183,10 +196,32 @@ public class UserVisitSessionAnalyzeSpark {
                                 clickCategoryIdsBuffer.append(clickCategoryIds + ",");
 //                                     }
                             }
+
+                            //计算session开始和结束时间
+                            Date actionTime=DateUtils.parseTime(row.getString(4));
+                            if(startTime==null){
+                                startTime=actionTime;
+                            }
+                            if(endTime==null){
+                                endTime=actionTime;
+                            }
+                            if(startTime.before(actionTime)){
+                                startTime=actionTime;
+                            }
+                            if(endTime.after(actionTime)){
+                                endTime=actionTime;
+                            }
+
+                            //计算session访问步长
+                            stepLength++;
                         }
                         //去掉末尾的","
                         String searchKeyWords = StringUtils.trimComma(searchkeywordBuffer.toString());
                         String clickCategoryIds = StringUtils.trimComma(clickCategoryIdsBuffer.toString());
+
+                        //计算session访问时长(s)
+                        long visitLength=(endTime.getTime()-startTime.getTime())/1000;
+
 
                         //因为我们要的是和用户表进行join,所以我们要把之前的<session_id,partAggrInfo>
                         //转化成<user_id,partAggrInfo>,还要再做一次maptopair算子(多此一举)
@@ -198,7 +233,9 @@ public class UserVisitSessionAnalyzeSpark {
                         //我们统一定义为key=value|key=value|......
                         String partAggrInfo = Constants.FILED_SESSION_ID + "=" + sessionId + "|" +
                                 Constants.FIELD_SEARCH_KEYWORDS + "=" + searchKeyWords + "|" +
-                                Constants.FIELD_CLICK_CATEGORY_IDS + "=" + clickCategoryIds;
+                                Constants.FIELD_CLICK_CATEGORY_IDS + "=" + clickCategoryIds+"|"+
+                                Constants.FIELD_VISIT_LENGTH+"+"+visitLength+"|"+
+                                Constants.FIELD_VISIT_LENGTH+"="+stepLength;
 
                         //到此为止获取的数据格式就是<userID,partAggrInfo>
                         return new Tuple2<Long, String>(userid, partAggrInfo);
