@@ -24,7 +24,7 @@ public interface Constants {
   String FIELD_CITY="city";
   String FIELD_SEX="sex";
   String FIELD_VISIT_LENGTH="visitLength";
-  String FIELD_STEP_LENGHT="stepLength";
+  String FIELD_STEP_LENGTH="stepLength";
 
 
   String SESSION_COUNT = "session_count";

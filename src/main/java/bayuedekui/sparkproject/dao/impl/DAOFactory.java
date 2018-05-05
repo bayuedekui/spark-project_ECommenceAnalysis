@@ -1,5 +1,6 @@
 package bayuedekui.sparkproject.dao.impl;
 
+import bayuedekui.sparkproject.dao.ISessionAggrStatDAO;
 import bayuedekui.sparkproject.dao.ITaskDao;
 
 public class DAOFactory {
@@ -9,5 +10,13 @@ public class DAOFactory {
      */
     public static ITaskDao getTaskDAO(){
         return new TaskDAOImpl();
+    }
+
+    /**
+     * 获取session聚合统计DAO
+     * @return
+     */
+    public static ISessionAggrStatDAO getSessionAggrStatDAO(){
+        return new SessionAggrStatDAOImpl();
     }
 }

@@ -121,6 +121,7 @@ public class JDBCHelper {
             pst=conn.prepareStatement(sql);
             for(int i=0;i<arr.length;i++){
                 pst.setObject(i+1,arr[i]);
+                System.out.println("传进来的参数数组-----"+arr[i]);
             }
              rs=pst.executeQuery();
             callback.process(rs);//回调函数,传进来外部处理数据的方法
