@@ -24,6 +24,7 @@ import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.catalyst.util.DateTimeUtils$;
 import org.apache.spark.sql.columnar.LONG;
 import org.apache.spark.sql.hive.HiveContext;
 import py4j.StringUtil;
@@ -31,8 +32,7 @@ import scala.Tuple2;
 import scala.tools.nsc.doc.DocFactory;
 
 import java.sql.SQLException;
-import java.util.Date;
-import java.util.Iterator;
+import java.util.*;
 
 public class UserVisitSessionAnalyzeSpark {
     public static void main(String[] args) throws SQLException {
@@ -80,7 +80,15 @@ public class UserVisitSessionAnalyzeSpark {
                 sessionid2AggrInfoRDD, taskParam, sessionAggrStatAccumulator);
 
 
-        filteredSessionid2AggrInfoRDD.count();
+        System.out.println(filteredSessionid2AggrInfoRDD.count());
+        /**
+         * 特别说明,要将上一个功能的session获取到,必须要在出发action操作出发job之后,才能从accumulator中
+         * 获取数据,否则时获取不到数据的,因为job没有执行,accumulator的值为空,
+         * 所以我们将随机抽取的功能的实现代码,放在session聚合统计功能的最终计算和写库之前
+         * 因为随机抽取功能中,有一个countByKey算子,是action操作,会触发job
+         */
+        randomExtractSession(filteredSessionid2AggrInfoRDD);
+
         //计算出各个session占比,然后写入MySQL(注意一定要进行action操作后才可以进行入库操作)
         //否则,transformation只是逻辑上读数据,而不是正式的处理数据,必须把action操作放在写入MySQL之前
         calculateAndPersistAggrStat(sessionAggrStatAccumulator.value(),task.getTaskId());
@@ -89,6 +97,8 @@ public class UserVisitSessionAnalyzeSpark {
         //关闭spark上下文
         sc.close();
     }
+
+   
 
     /**
      * 如果是在本地测试那就生成SQLContext
@@ -245,7 +255,8 @@ public class UserVisitSessionAnalyzeSpark {
                                 Constants.FIELD_SEARCH_KEYWORDS + "=" + searchKeyWords + "|" +
                                 Constants.FIELD_CLICK_CATEGORY_IDS + "=" + clickCategoryIds + "|" +
                                 Constants.FIELD_VISIT_LENGTH + "=" + visitLength + "|" +
-                                Constants.FIELD_STEP_LENGTH + "=" + stepLength;
+                                Constants.FIELD_STEP_LENGTH + "=" + stepLength+"|"+
+                                Constants.FIELD_START_TIME+DateUtils.formatDate(startTime);
 
                         //到此为止获取的数据格式就是<userID,partAggrInfo>
                         return new Tuple2<Long, String>(userid, partAggrInfo);
@@ -429,6 +440,110 @@ public class UserVisitSessionAnalyzeSpark {
         return filteredSessionid2AggrInfoRDD;
     }
 
+    /**
+     * 随机抽取session
+     * @param filteredSessionid2AggrInfoRDD
+     */
+    private static void randomExtractSession(JavaPairRDD<String,String> filteredSessionid2AggrInfoRDD) {
+        //计算每天每小时session的数量,获取<yyyy-MM-dd_HH,sessionid>格式的RDD
+        JavaPairRDD<String,String > time2sessionidRDD=filteredSessionid2AggrInfoRDD.mapToPair(
+                new PairFunction<Tuple2<String, String>, String, String>() {
+            @Override
+            public Tuple2<String, String> call(Tuple2<String, String> tuple) throws Exception {
+                String aggrInfo=tuple._2;   
+                String startTime=StringUtils.getFieldFromConcatString(aggrInfo,"\\|",Constants.FIELD_START_TIME);
+                String dateHour=DateUtils.getDateHour(startTime);//将yyyy-MM-dd HH:mm:ss--->yyyy-MM-dd_HH的日期格式
+                
+                
+                return new Tuple2<String, String>(dateHour,aggrInfo);
+            }
+        });
+        /**
+         * 每天每小时的session数量,然后计算每天每小时的session抽取索引,遍历每天每小时session
+         * 首先抽取的session的聚合数据,写入session_random_extract表
+         * 所以第一个RDD的value,应该是session聚合数据
+         */
+        //第一步,得到每天每个小时的session数量<dateHour,count>
+        Map<String, Object> countMap = time2sessionidRDD.countByKey();
+        
+        //第二部,按时间比例随机抽取算法,计算出每天每小时要抽取session索引
+        //将<yyyy-MM-dd_HH,count>格式的map,转化成<yyyy-MM-dd,<HH,count>>格式
+        Map<String ,Map<String ,Long>> dateHourCountMap=new HashMap<String, Map<String, Long>>();
+        for(Map.Entry<String ,Object> countEntry:countMap.entrySet()){
+            String dateHour=countEntry.getKey();
+            String date=dateHour.split("_")[0];
+            String hour=dateHour.split("_")[1];
+            
+            long count=Long.valueOf((Long) countEntry.getValue());
+            
+            //构造新的hashmap往dateHourCountMap里面塞
+            Map<String, Long> hourCountMap = dateHourCountMap.get(date);
+            if(hourCountMap==null){
+                hourCountMap=new HashMap<String, Long>();
+                dateHourCountMap.put(date,hourCountMap);
+            } 
+            hourCountMap.put(hour,count);
+        }
+        //开始实现我们的按时间比例随机抽取算法
+        //总共要抽取100个,先按照天数,进行平分
+        long extractNumberPerDay=100/dateHourCountMap.size();//100/总共有的天数=一天要拉取的session数量
+        
+        //<date,<hour,(3,5,6,9)>>
+        Map<String ,Map<String ,List<Integer>>> dateHourExtractMap=
+                new HashMap<String, Map<String, List<Integer>>>();
+        Random random=new Random();
+        
+        //遍历dateHourCountMap:<date,<hour,count>> 
+        for(Map.Entry<String,Map<String ,Long>> dateHourCountEntry:dateHourCountMap.entrySet()){
+            String date=dateHourCountEntry.getKey();//获取日期
+            Map<String, Long> hourCountMap=dateHourCountEntry.getValue();
+            
+            //计算这一天的session总数
+            long sessionCount=0L;
+            for (long  hourCount:hourCountMap.values()){
+                sessionCount+=hourCount;
+            }
+            
+            //提出来<hour,List<Integer>(3,5,6,9)>
+            Map<String ,List<Integer>> hourExtractMap=dateHourExtractMap.get(date);
+            if(hourExtractMap==null){
+                hourExtractMap=new HashMap<String, List<Integer>>();
+                dateHourExtractMap.put(date,hourExtractMap);
+            }
+            
+            //遍历每个小时
+            for(Map.Entry<String ,Long> hourCountEntry:hourCountMap.entrySet() ){
+                String hour=hourCountEntry.getKey();
+                long count=hourCountEntry.getValue();
+                
+                //计算每个小时的session数量,占据当天总session数量的比例,直接乘以每天要抽取的量
+                //就可以计算出当前小时要抽取的session数量
+                int hourExtractNumber= (int) (((double)count/(double)sessionCount)*extractNumberPerDay);
+                
+                if (hourExtractNumber>count){//当前要取的session数量大于count,直接取完所有,即count的大小
+                    hourExtractNumber=(int)count;
+                }
+                //先获取当前小时的存放随机数的list
+                List<Integer> extractIndexList=hourExtractMap.get(hour);
+                if(extractIndexList==null){
+                    extractIndexList=new ArrayList<Integer>();
+                    hourExtractMap.put(hour,extractIndexList);
+                }
+                
+                
+                //生成上面计算出来的数量的随机数
+                for(int i=0;i<hourExtractNumber;i++){
+                    int extractIndex=random.nextInt((int)count);
+                    while (extractIndexList.contains(extractIndex)){
+                        extractIndex=random.nextInt((int)count);
+                    }
+                    extractIndexList.add(extractIndex);
+                }
+            }
+            
+        }
+        
+    }
 
     /**
      * 计算哥session范围占比,并写入MySQL
@@ -513,6 +628,8 @@ public class UserVisitSessionAnalyzeSpark {
         ISessionAggrStatDAO sessionAggrStatDAO=DAOFactory.getSessionAggrStatDAO();
         sessionAggrStatDAO.insert(sessionAggrStat);
     }
+
+    
 }
 
 
