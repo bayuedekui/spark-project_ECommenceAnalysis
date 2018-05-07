@@ -445,7 +445,7 @@ public class UserVisitSessionAnalyzeSpark {
      * @param filteredSessionid2AggrInfoRDD
      */
     private static void randomExtractSession(JavaPairRDD<String,String> filteredSessionid2AggrInfoRDD) {
-        //计算每天每小时session的数量,获取<yyyy-MM-dd_HH,sessionid>格式的RDD
+        //第一步,计算每天每小时session的数量,获取<yyyy-MM-dd_HH,sessionid>格式的RDD
         JavaPairRDD<String,String > time2sessionidRDD=filteredSessionid2AggrInfoRDD.mapToPair(
                 new PairFunction<Tuple2<String, String>, String, String>() {
             @Override
@@ -463,10 +463,10 @@ public class UserVisitSessionAnalyzeSpark {
          * 首先抽取的session的聚合数据,写入session_random_extract表
          * 所以第一个RDD的value,应该是session聚合数据
          */
-        //第一步,得到每天每个小时的session数量<dateHour,count>
+        //得到每天每个小时的session数量<dateHour,count>
         Map<String, Object> countMap = time2sessionidRDD.countByKey();
         
-        //第二部,按时间比例随机抽取算法,计算出每天每小时要抽取session索引
+        //第二步,按时间比例随机抽取算法,计算出每天每小时要抽取session索引
         //将<yyyy-MM-dd_HH,count>格式的map,转化成<yyyy-MM-dd,<HH,count>>格式
         Map<String ,Map<String ,Long>> dateHourCountMap=new HashMap<String, Map<String, Long>>();
         for(Map.Entry<String ,Object> countEntry:countMap.entrySet()){
@@ -488,8 +488,8 @@ public class UserVisitSessionAnalyzeSpark {
         //总共要抽取100个,先按照天数,进行平分
         long extractNumberPerDay=100/dateHourCountMap.size();//100/总共有的天数=一天要拉取的session数量
         
-        //<date,<hour,(3,5,6,9)>>
-        Map<String ,Map<String ,List<Integer>>> dateHourExtractMap=
+        //<date,<hour,(3,5,6,9)>>,因为将要在算子中使用dateHourExtractMap,所以用final修饰
+       final Map<String ,Map<String ,List<Integer>>> dateHourExtractMap=
                 new HashMap<String, Map<String, List<Integer>>>();
         Random random=new Random();
         
@@ -543,6 +543,7 @@ public class UserVisitSessionAnalyzeSpark {
             
         }
         
+        //第三步,遍历每小时的session,然后根据随机索引进行抽取
     }
 
     /**
