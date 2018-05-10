@@ -47,7 +47,7 @@ public class JDBCHelper {
      * 第三部(创造连接池):私有化构造方法,整个周期过程中只创建一次,
      * 所以可以去创建自己唯一的饿一个数据库连接池
      */
-    public JDBCHelper(){
+    public JDBCHelper(){//构造方法,在创建类的时候初始化数据库的连接
         //首先定义数据池的大小(可以通过配置文件灵活的饿获取)
         int datasourceSize=ConfigurationManager.getIntger(Constants.JDBC_DATASOURCE_SIZE);
         //然后创建指定数量的数据库连接,并放入数据库连接池中

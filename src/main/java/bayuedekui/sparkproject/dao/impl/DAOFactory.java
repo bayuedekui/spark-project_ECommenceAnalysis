@@ -1,6 +1,8 @@
 package bayuedekui.sparkproject.dao.impl;
 
 import bayuedekui.sparkproject.dao.ISessionAggrStatDAO;
+import bayuedekui.sparkproject.dao.ISessionDetailDAO;
+import bayuedekui.sparkproject.dao.ISessionRandomExtractDAO;
 import bayuedekui.sparkproject.dao.ITaskDao;
 
 public class DAOFactory {
@@ -18,5 +20,13 @@ public class DAOFactory {
      */
     public static ISessionAggrStatDAO getSessionAggrStatDAO(){
         return new SessionAggrStatDAOImpl();
+    }
+    
+    public static ISessionRandomExtractDAO getSessionRandomExtractDAO(){
+        return new SessionRandomExtractDAOImpl();
+    }
+    
+    public static ISessionDetailDAO getSessionDetilDAO(){
+        return new SessionDetailDAOImpl();
     }
 }

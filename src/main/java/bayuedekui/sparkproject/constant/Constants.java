@@ -16,7 +16,7 @@ public interface Constants {
    * spark作业相关的常量
    */
   String SPARK_APP_NAME_SESSION="UserVisitSessionAnalyzeSpark";
-  String FILED_SESSION_ID="sessionId";
+  String FIELD_SESSION_ID="sessionId";
   String FIELD_SEARCH_KEYWORDS="searchKeyWords";
   String FIELD_CLICK_CATEGORY_IDS="clickCategoryIds";
   String FIELD_AGE="age";
@@ -26,6 +26,11 @@ public interface Constants {
   String FIELD_VISIT_LENGTH="visitLength";
   String FIELD_STEP_LENGTH="stepLength";
   String FIELD_START_TIME="startTime";
+  String FIELD_CLICK_COUNT="clickCount";
+  String FIELD_ORDER_COUNT="orderCount";
+  String FIELD_PAY_COUNT="payCount";
+  String FIELD_CATEGORY_ID="categoryid";
+  
 
   String SESSION_COUNT = "session_count";
   String TIME_PERIOD_1s_3s = "1s_3s";
