@@ -1,7 +1,7 @@
 package bayuedekui.test;
 
 import bayuedekui.sparkproject.dao.ITaskDao;
-import bayuedekui.sparkproject.dao.impl.DAOFactory;
+import bayuedekui.sparkproject.dao.factory.DAOFactory;
 import bayuedekui.sparkproject.domain.Task;
 import bayuedekui.sparkproject.util.DateUtils;
 

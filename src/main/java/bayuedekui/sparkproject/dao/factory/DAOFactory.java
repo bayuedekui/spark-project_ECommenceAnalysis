@@ -1,10 +1,11 @@
-package bayuedekui.sparkproject.dao.impl;
+package bayuedekui.sparkproject.dao.factory;
 
-import bayuedekui.sparkproject.dao.ISessionAggrStatDAO;
-import bayuedekui.sparkproject.dao.ISessionDetailDAO;
-import bayuedekui.sparkproject.dao.ISessionRandomExtractDAO;
-import bayuedekui.sparkproject.dao.ITaskDao;
+import bayuedekui.sparkproject.dao.*;
+import bayuedekui.sparkproject.dao.impl.*;
 
+/**
+ * 工厂类,用于创建工厂,实现的抽象化,有利于开闭原则
+ */
 public class DAOFactory {
     /**
      * 获取任务管理的dao
@@ -28,5 +29,13 @@ public class DAOFactory {
     
     public static ISessionDetailDAO getSessionDetilDAO(){
         return new SessionDetailDAOImpl();
+    }
+    
+    public static ITop10CategoryDAO getTop10CategoryDAP(){
+        return new Top10CategoryDAOImpl();
+    }
+    
+    public static ITop10SesssionDAO getTop10SessionDAO(){
+        return new Top10SessionImpl();
     }
 }

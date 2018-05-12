@@ -1,5 +1,6 @@
-package bayuedekui.sparkproject.spark;
+package bayuedekui.sparkproject.spark.session;
 
+import scala.Serializable;
 import scala.math.Ordered;
 
 /**
@@ -8,8 +9,9 @@ import scala.math.Ordered;
  * 实现Ordered接口的几个方法
  * 和其他key相比,如何来判定大于,大于等于,小于,小于等于
  * 依次进行三个字段进行相比,如果等于就进行下一个相比
+ * (自定义二次排序key,必须要实现序列化接口,表明可以是可以序列化的,否则会报错)
  */
-public class CategorySortKey implements Ordered<CategorySortKey> {
+public class CategorySortKey implements Ordered<CategorySortKey>, Serializable {
 
     private long clickCount;
     private long orderCount;
@@ -26,6 +28,13 @@ public class CategorySortKey implements Ordered<CategorySortKey> {
        }
        return 0;
     }
+
+    public CategorySortKey(long clickCount, long orderCount, long payCount) {
+        this.clickCount = clickCount;
+        this.orderCount = orderCount;
+        this.payCount = payCount;
+    }
+
     @Override
     public int compareTo(CategorySortKey other) {
         if(clickCount-other.getClickCount()!=0){
@@ -36,6 +45,7 @@ public class CategorySortKey implements Ordered<CategorySortKey> {
             return (int) (payCount-other.getPayCount());
         }
         return 0;
+        
 
     }
     @Override

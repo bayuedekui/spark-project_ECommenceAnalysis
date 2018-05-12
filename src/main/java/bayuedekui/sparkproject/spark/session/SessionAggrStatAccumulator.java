@@ -1,4 +1,4 @@
-package bayuedekui.sparkproject.spark;
+package bayuedekui.sparkproject.spark.session;
 
 import bayuedekui.sparkproject.constant.Constants;
 import bayuedekui.sparkproject.util.StringUtils;
